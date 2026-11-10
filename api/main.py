@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 import time
 from contextlib import asynccontextmanager
 from uuid import UUID, uuid4
@@ -7,7 +8,7 @@ from uuid import UUID, uuid4
 from fastapi import Depends, FastAPI, Header, Request, Response, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -15,20 +16,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .db import get_db
+from .metrics import http_latency, http_requests, orders_created
 from .models import IdempotencyKey, Inventory, Order, OrderItem, Product, WorkItem
 from .schemas import CreateOrderRequest, CreateOrderResponse, OrderResponse
 
-orders_created = Counter("fulfillops_orders_created_total", "Orders accepted by the API")
-orders_failed = Counter("fulfillops_orders_failed_total", "Orders that failed processing")
-worker_retries = Counter("fulfillops_worker_retries_total", "Worker retry attempts")
-http_requests = Counter(
-    "fulfillops_http_requests_total", "HTTP requests received", ["method", "path", "status"]
-)
-http_latency = Histogram(
-    "fulfillops_http_request_duration_seconds",
-    "HTTP request duration in seconds",
-    ["method", "path"],
-)
+logger = logging.getLogger("fulfillops.api")
 
 
 class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
@@ -242,6 +234,7 @@ def create_order(
                     items=order_items,
                 )
             )
+            db.flush()
             db.add(
                 IdempotencyKey(
                     idempotency_key=idempotency_key,
@@ -254,6 +247,7 @@ def create_order(
         return CreateOrderResponse(order_id=order_id, status="queued")
     except SQLAlchemyError:
         db.rollback()
+        logger.exception("order_creation_failed")
         return error_response(503, "SERVICE_UNAVAILABLE", "Order service is unavailable")
 
 

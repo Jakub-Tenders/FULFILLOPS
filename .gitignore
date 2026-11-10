@@ -14,3 +14,5 @@ build/
 *.egg-info/
 coverage.xml
 docs/evidence/
+.pytest_cache/
+.ruff_cache//
