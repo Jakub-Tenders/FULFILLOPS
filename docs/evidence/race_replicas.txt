@@ -10,4 +10,4 @@ collecting ... collected 2 items
 tests/test_races_replicas.py::test_same_key_eight_requests_across_both_replicas PASSED [ 50%]
 tests/test_races_replicas.py::test_twelve_different_keys_across_both_replicas_for_five_units PASSED [100%]
 
-============================== 2 passed in 1.34s ===============================
+============================== 2 passed in 1.15s ===============================

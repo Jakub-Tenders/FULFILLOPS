@@ -1,0 +1,46 @@
+[12:26:46] 1. reset the disposable test DB
+Disposable FulfillOps test database reset successfully.
+[12:26:46] 2. restart workers with a 10 s processing delay (2 workers) so a job is in flight
+[12:26:54] 3. create 4 orders (each worker will hold one job for 10 s)
+[12:26:57] 4. work items while both workers are busy
+ work_id |   status   | attempts | claimed 
+---------+------------+----------+---------
+       1 | processing |        1 | t
+       2 | processing |        1 | t
+       3 | pending    |        0 | f
+       4 | pending    |        0 | f
+(4 rows)
+
+[12:26:57] 5. KILL worker 1 mid-processing (docker kill = SIGKILL, no cleanup)
+fulfillops-worker-1
+[12:26:59] 6. state right after the crash (one job is stuck in 'processing', its lease expires after 30 s)
+ work_id |   status   | attempts | claimed 
+---------+------------+----------+---------
+       1 | processing |        1 | t
+       2 | processing |        1 | t
+       3 | pending    |        0 | f
+       4 | pending    |        0 | f
+(4 rows)
+
+[12:26:59] 7. waiting for recovery (the surviving worker finishes its jobs, then reclaims the stale one)
+[12:27:36] 8. final state: every order completed; the abandoned job shows attempts = 2
+ work_id |  status   | attempts | claimed 
+---------+-----------+----------+---------
+       1 | completed |        1 | f
+       2 | completed |        2 | f
+       3 | completed |        1 | f
+       4 | completed |        1 | f
+(4 rows)
+
+ order_status | count 
+--------------+-------
+ completed    |     4
+(1 row)
+
+ completed_jobs | attempts_1 | attempts_2 
+----------------+------------+------------
+              4 |          3 |          1
+(1 row)
+
+[12:27:36] 9. restore normal worker settings (no delay, 2 workers)
+[12:27:40] done; evidence saved to docs/evidence/crash_recovery.txt
