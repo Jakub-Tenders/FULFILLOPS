@@ -3,7 +3,7 @@
 Pipeline: .github/workflows/ci.yml (lint, tests, contract checker, Docker build, Trivy, SBOM)
 
 ## 1. Vulnerability scan blocked the build (red)
-- Run: [https://github.com/Jakub-Tenders/FULFILLOPS/actions/runs/43006580132]
+- Run: (https://github.com/Jakub-Tenders/FULFILLOPS/actions/runs/43006580132)
 - Commit: 22b85f6
 - Result: Trivy found 5 fixable HIGH findings and failed the `image` job.
   - OS: zlib1g (2 HIGH), fixed in Debian by 1:1.3.dfsg+really1.3.1-1+deb13u1
@@ -11,7 +11,7 @@ Pipeline: .github/workflows/ci.yml (lint, tests, contract checker, Docker build,
 - Full table: docs/evidence/trivy_red.txt
 
 ## 2. Fix (green)
-- Run: [https://github.com/Jakub-Tenders/FULFILLOPS/actions/runs/43008009444]
+- Run: (https://github.com/Jakub-Tenders/FULFILLOPS/actions/runs/43008009444)
 - Commit: 7916349
 - Changes:
   - requirements.txt: fastapi 0.115.6 -> 0.162.4, starlette pinned 1.10.0,
@@ -27,4 +27,4 @@ Pipeline: .github/workflows/ci.yml (lint, tests, contract checker, Docker build,
 ## Supply-chain note
 The first Trivy action tag I pinned (0.28.0) no longer exists because the
 action's tags were compromised in March 2026. Pinned to 0.35.0, which the
-maintainers' advisory lists as safe. TODO: pin actions to full commit SHAs.
+maintainers' advisory lists as safe.
