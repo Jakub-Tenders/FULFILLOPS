@@ -18,6 +18,6 @@ COPY scripts ./scripts
 
 USER fulfillops
 
-EXPOSE 8080
+EXPOSE 8080 9100
 
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080"]
