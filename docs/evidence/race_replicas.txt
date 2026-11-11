@@ -1,0 +1,13 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.18, pytest-8.3.4, pluggy-1.7.0 -- /Users/jakubmotysia/Desktop/EPITA-L3/dev-ops/FulFillops/venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/jakubmotysia/Desktop/EPITA-L3/dev-ops/FulFillops
+configfile: pytest.ini
+plugins: asyncio-0.25.0, anyio-4.16.0
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=function
+collecting ... collected 2 items
+
+tests/test_races_replicas.py::test_same_key_eight_requests_across_both_replicas PASSED [ 50%]
+tests/test_races_replicas.py::test_twelve_different_keys_across_both_replicas_for_five_units PASSED [100%]
+
+============================== 2 passed in 1.34s ===============================
