@@ -1,10 +1,4 @@
-"""
-Race tests over real HTTP against both API replicas (8080 and 8081).
-Needs the Compose stack running: `docker compose up -d --build --wait --scale worker=2`.
-Seed stock: KIT-100=7, PART-200=12, PACK-300=5 (reset before every test by conftest).
-"""
-
-import threading
+import threading 
 from concurrent.futures import ThreadPoolExecutor
 
 import httpx

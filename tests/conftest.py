@@ -1,4 +1,3 @@
-
 import os
 import subprocess
 import sys
@@ -11,7 +10,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 os.environ.setdefault("APP_ENV", "test")
 os.environ.setdefault(
     "DATABASE_URL",
-    "postgresql+psycopg://fulfillops:fulfillops@localhost:5432/fulfillops",
+    "postgresql+psycopg://fulfillops:fulfillops@localhost:5432/fulfillops_test",
 )
 
 

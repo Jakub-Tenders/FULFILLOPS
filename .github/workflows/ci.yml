@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 15
     env:
       APP_ENV: test
-      DATABASE_URL: postgresql+psycopg://fulfillops:fulfillops@localhost:5432/fulfillops
+      DATABASE_URL: postgresql+psycopg://fulfillops:fulfillops@localhost:5432/fulfillops_test
     steps:
       - uses: actions/checkout@v4
 
@@ -31,11 +31,17 @@ jobs:
       - name: Lint
         run: ruff check .
 
-      - name: Start stack (postgres, 2 APIs, 2 workers)
+      - name: Start PostgreSQL only (no workers, so in-process tests own the job table)
+        run: docker compose up -d --wait postgres
+
+      - name: Unit, contract, race and worker tests (in-process)
+        run: python -m pytest -v --ignore=tests/test_races_replicas.py
+
+      - name: Start full stack (postgres, 2 APIs, 2 workers)
         run: docker compose up -d --build --wait --scale worker=2
 
-      - name: Tests
-        run: python -m pytest -v
+      - name: Cross-replica race tests (HTTP)
+        run: python -m pytest -v tests/test_races_replicas.py
 
       - name: Contract checker (basic)
         run: |
