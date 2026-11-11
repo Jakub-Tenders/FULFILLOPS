@@ -1,0 +1,15 @@
+Disposable FulfillOps test database reset successfully.
+--- stock before
+{"sku":"PACK-300","available":5}
+--- create poison order
+order_id=e82f82de-abf3-48ff-82dd-2b11b7918f18
+--- work item (attempts, final state, error)
+   status    | attempts |         last_error         
+-------------+----------+----------------------------
+ dead_letter |        3 | Deterministic poison order
+(1 row)
+
+--- order via API
+{"order_id":"e82f82de-abf3-48ff-82dd-2b11b7918f18","status":"failed","total_cents":249}
+--- stock after (kept reserved, not restocked)
+{"sku":"PACK-300","available":4}
