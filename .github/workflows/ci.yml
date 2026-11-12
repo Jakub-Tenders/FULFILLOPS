@@ -1,0 +1,99 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: lint, tests, contract checker
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      APP_ENV: test
+      DATABASE_URL: postgresql+psycopg://fulfillops:fulfillops@localhost:5432/fulfillops_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Start PostgreSQL only (no workers, so in-process tests own the job table)
+        run: docker compose up -d --wait postgres
+
+      - name: Unit, contract, race and worker tests (in-process)
+        run: python -m pytest -v --ignore=tests/test_races_replicas.py
+
+      - name: Start full stack (postgres, 2 APIs, 2 workers)
+        run: docker compose up -d --build --wait --scale worker=2
+
+      - name: Cross-replica race tests (HTTP)
+        run: python -m pytest -v tests/test_races_replicas.py
+
+      - name: Contract checker (basic)
+        run: |
+          python scripts/reset_test_data.py
+          python fulfillops_public_checker.py
+
+      - name: Contract checker (concurrency)
+        run: |
+          python scripts/reset_test_data.py
+          python fulfillops_public_checker.py --concurrency
+
+      - name: Contract checker (stress)
+        run: |
+          python scripts/reset_test_data.py
+          python fulfillops_public_checker.py --stress
+
+      - name: Stack logs on failure
+        if: failure()
+        run: docker compose logs --no-color --tail=200
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
+
+  image:
+    name: docker build, vulnerability scan, SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t fulfillops:${{ github.sha }} .
+
+      - name: Vulnerability scan (fail on fixable HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: fulfillops:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Generate SBOM (SPDX)
+        uses: anchore/sbom-action@v0
+        with:
+          image: fulfillops:${{ github.sha }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+          upload-artifact: false
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: sbom.spdx.json

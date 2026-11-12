@@ -3,6 +3,7 @@
 import os
 import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
 from sqlalchemy import create_engine, text
 
@@ -19,6 +20,14 @@ def main() -> int:
         return 2
     if REQUIRED_DATABASE_MARKER not in database_url.lower():
         print("Refusing reset: DATABASE_URL must identify the FulfillOps database.", file=sys.stderr)
+        return 2
+    database_name = urlparse(database_url).path.lstrip("/")
+    if not database_name.endswith("_test"):
+        print(
+            f"Refusing reset: database {database_name!r} is not a dedicated test database "
+            "(name must end with _test).",
+            file=sys.stderr,
+        )
         return 2
     if any(value in database_url.lower() for value in ("prod", "production", "live")):
         print("Refusing reset: production-like database name detected.", file=sys.stderr)

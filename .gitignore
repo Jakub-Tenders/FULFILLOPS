@@ -1,4 +1,4 @@
-.venv/
+venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -13,6 +13,6 @@ dist/
 build/
 *.egg-info/
 coverage.xml
-docs/evidence/
 .pytest_cache/
 .ruff_cache//
+.DS_Store

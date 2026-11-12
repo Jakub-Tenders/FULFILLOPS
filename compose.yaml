@@ -2,15 +2,17 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: fulfillops
+      POSTGRES_DB: fulfillops_test
       POSTGRES_USER: fulfillops
       POSTGRES_PASSWORD: fulfillops
+    ports:
+      - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./db/migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
       - ./db/seed.sql:/docker-entrypoint-initdb.d/002_seed.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U fulfillops -d fulfillops"]
+      test: ["CMD-SHELL", "pg_isready -U fulfillops -d fulfillops_test"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -21,13 +23,14 @@ services:
       dockerfile: Dockerfile
     environment:
       APP_ENV: development
-      DATABASE_URL: postgresql+psycopg://fulfillops:fulfillops@postgres:5432/fulfillops
+      DATABASE_URL: postgresql+psycopg://fulfillops:fulfillops@postgres:5432/fulfillops_test
     ports:
       - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
-    command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080"]
+    command:
+      ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080"]
     healthcheck:
       test:
         [
@@ -40,19 +43,39 @@ services:
       timeout: 5s
       retries: 5
 
+  api2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://fulfillops:fulfillops@postgres:5432/fulfillops_test
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command:
+      ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080"]
+
   worker:
     build:
       context: .
       dockerfile: Dockerfile
     environment:
       APP_ENV: development
-      DATABASE_URL: postgresql+psycopg://fulfillops:fulfillops@postgres:5432/fulfillops
+      DATABASE_URL: postgresql+psycopg://fulfillops:fulfillops@postgres:5432/fulfillops_test
       WORKER_POLL_INTERVAL_SECONDS: 1
       WORKER_MAX_ATTEMPTS: 3
+      WORKER_PROCESS_DELAY_SECONDS: ${WORKER_PROCESS_DELAY_SECONDS:-0}
     depends_on:
       postgres:
         condition: service_healthy
     command: ["python", "-m", "worker.main"]
+    expose:
+      - "9100"
+    deploy:
+      replicas: 2
 
 volumes:
   postgres-data:
