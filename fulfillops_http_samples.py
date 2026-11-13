@@ -21,7 +21,7 @@ for i in range(SAMPLES):
             response.read()
     except HTTPError as e:
         status = e.code
-    except (URLError, TimeoutError) as e:
+    except (URLError, TimeoutError):
         status = "ERROR"
 
     duration_ms = (time.perf_counter() - start) * 1000
