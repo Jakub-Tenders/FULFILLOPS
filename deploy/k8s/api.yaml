@@ -38,7 +38,7 @@ spec:
               valueFrom:
                 secretKeyRef: { name: fulfillops-db, key: DATABASE_URL }
           readinessProbe:
-            httpGet: { path: /health/does-not-exist, port: http }
+            httpGet: { path: /health/ready, port: http }
             periodSeconds: 3
             timeoutSeconds: 2
             failureThreshold: 2
