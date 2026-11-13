@@ -134,7 +134,7 @@ At minimum produce: time-stamped structured logs, healthy/unhealthy readiness ev
 
 These exercises include **six supervised classroom hours** divided into two 3-hour blocks. Use the in-class time for architecture review, first concurrency test, worker/recovery rehearsal and deployment evidence. A team should budget approximately **34–49 additional team-hours**.
 
-Suggested final submission deadline: **Sunday 15 November 2026, 23:59 Europe/Paris**. Confirm with instructor.
+Suggested final submission deadline: **Saturday 14 November 2026, 23:59 Europe/Paris**. Confirm with instructor.
 
 ## 9. Classroom checkpoint and advanced preflight
 
@@ -144,7 +144,7 @@ The instructor will ask for two checkpoints during the six classroom hours; no c
 - **Checkpoint B (end of second 3 h):** demonstrate worker restart recovery, an enforced CI gate, a controlled deployment diagnostic and a completed evidence checklist.
 
 To run the final API checker against the **fresh disposable test stack**:
-
+c
 ```bash
 python3 fulfillops_public_checker.py --base-url http://localhost:8080 --concurrency --stress
 ```
