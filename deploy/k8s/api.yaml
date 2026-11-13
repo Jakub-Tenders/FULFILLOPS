@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fulfillops-api
+  labels: { app: fulfillops-api }
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  minReadySeconds: 5
+  progressDeadlineSeconds: 60
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels: { app: fulfillops-api }
+  template:
+    metadata:
+      labels: { app: fulfillops-api }
+    spec:
+      # Numeric UID: the image's USER is a name, which runAsNonRoot cannot verify.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: api
+          image: fulfillops
+          imagePullPolicy: IfNotPresent
+          ports:
+            - { name: http, containerPort: 8080 }
+          envFrom:
+            - configMapRef: { name: fulfillops-config }
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: { name: fulfillops-db, key: DATABASE_URL }
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http }
+            periodSeconds: 3
+            timeoutSeconds: 2
+            failureThreshold: 2
+          livenessProbe:
+            httpGet: { path: /health/live, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec: { command: ["sleep", "5"] }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 384Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fulfillops-api
+  labels: { app: fulfillops-api }
+spec:
+  selector: { app: fulfillops-api }
+  ports:
+    - { name: http, port: 80, targetPort: http }
+---
+# Host access: kind maps localhost:8080 -> this NodePort (see deploy/kind/kind-config.yaml).
+apiVersion: v1
+kind: Service
+metadata:
+  name: fulfillops-api-nodeport
+  labels: { app: fulfillops-api }
+spec:
+  type: NodePort
+  selector: { app: fulfillops-api }
+  ports:
+    - { name: http, port: 80, targetPort: http, nodePort: 30080 }
