@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fulfillops-config
+data:
+  APP_ENV: "development"
+  WORKER_POLL_INTERVAL_SECONDS: "1"
+  WORKER_MAX_ATTEMPTS: "3"
+  # Set to "8" (in Git!) only for the worker-kill drill, then revert.
+  WORKER_PROCESS_DELAY_SECONDS: "0"
